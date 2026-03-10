@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { sql } from "@/lib/db";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   if (!process.env.DATABASE_URL) {
     console.error("DATABASE_URL is not set");

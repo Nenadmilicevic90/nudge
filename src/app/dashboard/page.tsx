@@ -1,13 +1,13 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { DashboardClient } from "./dashboard-client";
 
 export default async function DashboardPage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/auth/login");
+  const session = await getSession();
+  if (!session?.id) redirect("/auth/login");
 
-  const userId = session.user.id;
+  const userId = session.id;
 
   // Check onboarding
   const users = await sql`SELECT onboarded FROM users WHERE id = ${userId}`;

@@ -1,14 +1,14 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const registered = searchParams.get("registered");
   const [email, setEmail] = useState("");
@@ -21,19 +21,22 @@ function LoginForm() {
     setLoading(true);
     setError(null);
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
     });
 
-    if (result?.error) {
-      setError("Fel e-post eller lösenord");
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error ?? "Inloggning misslyckades");
       setLoading(false);
       return;
     }
 
-    window.location.href = "/dashboard";
+    router.push("/dashboard");
+    router.refresh();
   }
 
   return (

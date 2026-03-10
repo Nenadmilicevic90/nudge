@@ -1,13 +1,13 @@
 "use server";
 
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 async function requireAuth() {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
-  return session.user.id;
+  const session = await getSession();
+  if (!session?.id) throw new Error("Unauthorized");
+  return session.id;
 }
 
 export async function checkinAction(goalId: string, date: string, status: "done" | "skipped") {

@@ -1,9 +1,11 @@
-import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { verifySession } from "@/lib/auth";
 
-export default auth((req) => {
-  const isLoggedIn = !!req.auth;
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const token = req.cookies.get("nudge_session")?.value;
+  const user = token ? await verifySession(token) : null;
+  const isLoggedIn = !!user;
 
   const protectedRoutes = ["/dashboard", "/goals", "/profile", "/onboarding"];
   const isProtected = protectedRoutes.some((r) => pathname.startsWith(r));
@@ -14,13 +16,16 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect logged-in users away from auth pages
-  if (isLoggedIn && (pathname.startsWith("/auth/login") || pathname.startsWith("/auth/register"))) {
+  if (
+    isLoggedIn &&
+    (pathname.startsWith("/auth/login") ||
+      pathname.startsWith("/auth/register"))
+  ) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [

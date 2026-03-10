@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
@@ -17,6 +17,14 @@ export function ProfileClient({
   totalGoals,
   totalCheckins,
 }: Props) {
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/auth/login");
+    router.refresh();
+  }
+
   return (
     <div className="mx-auto max-w-md px-4 pt-6 pb-24">
       <h1 className="text-xl font-bold">Profil</h1>
@@ -42,7 +50,7 @@ export function ProfileClient({
       <Button
         variant="outline"
         className="w-full"
-        onClick={() => signOut({ callbackUrl: "/auth/login" })}
+        onClick={handleLogout}
       >
         Logga ut
       </Button>

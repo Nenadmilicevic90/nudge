@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import { GoalForm } from "@/components/goal-form";
@@ -10,11 +10,11 @@ type Props = {
 
 export default async function EditGoalPage({ params }: Props) {
   const { id } = await params;
-  const session = await auth();
-  if (!session?.user?.id) redirect("/auth/login");
+  const session = await getSession();
+  if (!session?.id) redirect("/auth/login");
 
   const goals = await sql`
-    SELECT * FROM goals WHERE id = ${id} AND user_id = ${session.user.id}
+    SELECT * FROM goals WHERE id = ${id} AND user_id = ${session.id}
   `;
   const goal = goals[0];
   if (!goal) notFound();

@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import { GoalDetailClient } from "./goal-detail-client";
@@ -9,10 +9,10 @@ type Props = {
 
 export default async function GoalDetailPage({ params }: Props) {
   const { id } = await params;
-  const session = await auth();
-  if (!session?.user?.id) redirect("/auth/login");
+  const session = await getSession();
+  if (!session?.id) redirect("/auth/login");
 
-  const userId = session.user.id;
+  const userId = session.id;
 
   const goals = await sql`
     SELECT * FROM goals WHERE id = ${id} AND user_id = ${userId}

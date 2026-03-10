@@ -1,11 +1,11 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { GoalForm } from "@/components/goal-form";
 import { BottomNav } from "@/components/bottom-nav";
 
 export default async function NewGoalPage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/auth/login");
+  const session = await getSession();
+  if (!session?.id) redirect("/auth/login");
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]">

@@ -1,14 +1,14 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth";
 import { sql } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { ProfileClient } from "./profile-client";
 import { BottomNav } from "@/components/bottom-nav";
 
 export default async function ProfilePage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/auth/login");
+  const session = await getSession();
+  if (!session?.id) redirect("/auth/login");
 
-  const userId = session.user.id;
+  const userId = session.id;
 
   const users = await sql`SELECT * FROM users WHERE id = ${userId}`;
   const user = users[0];
@@ -22,7 +22,7 @@ export default async function ProfilePage() {
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
       <ProfileClient
-        email={session.user.email ?? ""}
+        email={session.email ?? ""}
         userName={user?.name ?? null}
         totalGoals={goals.length}
         totalCheckins={checkins.length}
