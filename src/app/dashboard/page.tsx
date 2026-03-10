@@ -1,33 +1,25 @@
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/auth";
+import { sql } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { DashboardClient } from "./dashboard-client";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const session = await auth();
+  if (!session?.user?.id) redirect("/auth/login");
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/auth/login");
+  const userId = session.user.id;
 
   // Check onboarding
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("onboarded")
-    .eq("id", user.id)
-    .single();
-
-  if (profile && !profile.onboarded) {
+  const users = await sql`SELECT onboarded FROM users WHERE id = ${userId}`;
+  if (users[0] && !users[0].onboarded) {
     redirect("/onboarding");
   }
 
-  const { data: goals } = await supabase
-    .from("goals")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("active", true)
-    .order("sort_order", { ascending: true });
+  const goals = await sql`
+    SELECT * FROM goals
+    WHERE user_id = ${userId} AND active = TRUE
+    ORDER BY sort_order ASC
+  `;
 
   // Get this week's checkins
   const today = new Date();
@@ -36,17 +28,16 @@ export default async function DashboardPage() {
   monday.setDate(today.getDate() - ((day + 6) % 7));
   const mondayStr = monday.toISOString().split("T")[0];
 
-  const { data: checkins } = await supabase
-    .from("checkins")
-    .select("*")
-    .eq("user_id", user.id)
-    .gte("date", mondayStr);
+  const checkins = await sql`
+    SELECT * FROM checkins
+    WHERE user_id = ${userId} AND date >= ${mondayStr}
+  `;
 
   return (
     <DashboardClient
-      goals={goals ?? []}
-      checkins={checkins ?? []}
-      userId={user.id}
+      goals={goals as any[]}
+      checkins={checkins as any[]}
+      userId={userId}
     />
   );
 }

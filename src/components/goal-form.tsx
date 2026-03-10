@@ -2,18 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createGoalAction, updateGoalAction } from "@/lib/actions";
 import { Goal, CATEGORIES, INTERVALS } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type Props = {
-  userId: string;
   goal?: Goal;
 };
 
-export function GoalForm({ userId, goal }: Props) {
+export function GoalForm({ goal }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,37 +32,27 @@ export function GoalForm({ userId, goal }: Props) {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const data = {
-      name,
-      description: description || null,
-      category,
-      interval_type: intervalType,
-      reminder_time: reminderTime,
-      user_id: userId,
-    };
+    try {
+      const data = {
+        name,
+        description: description || null,
+        category,
+        interval_type: intervalType,
+        reminder_time: reminderTime,
+      };
 
-    if (goal) {
-      const { error: err } = await supabase
-        .from("goals")
-        .update(data)
-        .eq("id", goal.id);
-      if (err) {
-        setError(err.message);
-        setLoading(false);
-        return;
+      if (goal) {
+        await updateGoalAction(goal.id, data);
+      } else {
+        await createGoalAction(data);
       }
-    } else {
-      const { error: err } = await supabase.from("goals").insert(data);
-      if (err) {
-        setError(err.message);
-        setLoading(false);
-        return;
-      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Något gick fel");
+      setLoading(false);
     }
-
-    router.push("/dashboard");
-    router.refresh();
   }
 
   return (

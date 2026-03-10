@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { checkinAction } from "@/lib/actions";
 import { Goal, Checkin, CATEGORIES } from "@/lib/types";
 import { calculateStreak, formatDate } from "@/lib/streak";
 import { WeekHeatmap } from "@/components/week-heatmap";
@@ -22,18 +22,7 @@ export function DashboardClient({ goals, checkins, userId }: Props) {
 
   async function handleCheckin(goalId: string, status: "done" | "skipped") {
     setLoadingGoalId(goalId);
-    const supabase = createClient();
-
-    await supabase.from("checkins").upsert(
-      {
-        goal_id: goalId,
-        user_id: userId,
-        date: today,
-        status,
-      },
-      { onConflict: "goal_id,date" }
-    );
-
+    await checkinAction(goalId, today, status);
     setLoadingGoalId(null);
     router.refresh();
   }

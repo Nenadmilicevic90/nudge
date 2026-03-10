@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { deleteGoalAction } from "@/lib/actions";
 import { Goal, Checkin, CATEGORIES } from "@/lib/types";
 import { calculateStreak } from "@/lib/streak";
 import { WeekHeatmap } from "@/components/week-heatmap";
@@ -22,9 +22,7 @@ export function GoalDetailClient({ goal, checkins }: Props) {
 
   async function handleDelete() {
     if (!confirm("Är du säker på att du vill ta bort detta mål?")) return;
-
-    const supabase = createClient();
-    await supabase.from("goals").delete().eq("id", goal.id);
+    await deleteGoalAction(goal.id);
     router.push("/dashboard");
     router.refresh();
   }

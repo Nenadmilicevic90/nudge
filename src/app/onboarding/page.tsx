@@ -1,14 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { OnboardingClient } from "./onboarding-client";
 
 export default async function OnboardingPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await auth();
+  if (!session?.user?.id) redirect("/auth/login");
 
-  if (!user) redirect("/auth/login");
-
-  return <OnboardingClient userId={user.id} />;
+  return <OnboardingClient />;
 }

@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { Suspense, useState } from "react";
+import { signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function LoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const registered = searchParams.get("registered");
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,22 +21,77 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
+    const result = await signIn("credentials", {
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      password,
+      redirect: false,
     });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setSent(true);
+    if (result?.error) {
+      setError("Fel e-post eller lösenord");
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    window.location.href = "/dashboard";
   }
 
+  return (
+    <>
+      {registered && (
+        <div className="rounded-lg border bg-green-50 p-3 text-center text-sm text-green-700">
+          Konto skapat! Logga in nedan.
+        </div>
+      )}
+
+      <form onSubmit={handleLogin} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email">E-post</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="din@epost.se"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoFocus
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="password">Lösenord</Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="Ditt lösenord"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+
+        {error && <p className="text-sm text-red-500">{error}</p>}
+
+        <Button
+          type="submit"
+          className="w-full bg-[#4CAF50] hover:bg-[#43A047]"
+          disabled={loading}
+        >
+          {loading ? "Loggar in..." : "Logga in"}
+        </Button>
+      </form>
+
+      <p className="text-center text-sm text-muted-foreground">
+        Inget konto?{" "}
+        <Link href="/auth/register" className="text-[#4CAF50] hover:underline">
+          Registrera dig
+        </Link>
+      </p>
+    </>
+  );
+}
+
+export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#FAFAFA] px-4">
       <div className="w-full max-w-sm space-y-8">
@@ -43,41 +102,9 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {sent ? (
-          <div className="rounded-lg border bg-white p-6 text-center shadow-sm">
-            <p className="text-lg font-medium">Kolla din e-post! 📬</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Vi har skickat en magisk länk till <strong>{email}</strong>
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">E-post</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="din@epost.se"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoFocus
-              />
-            </div>
-
-            {error && (
-              <p className="text-sm text-red-500">{error}</p>
-            )}
-
-            <Button
-              type="submit"
-              className="w-full bg-[#4CAF50] hover:bg-[#43A047]"
-              disabled={loading}
-            >
-              {loading ? "Skickar..." : "Logga in med magisk länk"}
-            </Button>
-          </form>
-        )}
+        <Suspense>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );

@@ -2,17 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { completeOnboardingAction } from "@/lib/actions";
 import { CATEGORIES } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type Props = {
-  userId: string;
-};
-
-export function OnboardingClient({ userId }: Props) {
+export function OnboardingClient() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [goalName, setGoalName] = useState("");
@@ -21,25 +17,7 @@ export function OnboardingClient({ userId }: Props) {
 
   async function handleFinish() {
     setLoading(true);
-    const supabase = createClient();
-
-    // Create first goal
-    if (goalName.trim()) {
-      await supabase.from("goals").insert({
-        name: goalName.trim(),
-        category,
-        user_id: userId,
-        interval_type: "daily",
-        reminder_time: "08:00",
-      });
-    }
-
-    // Mark as onboarded
-    await supabase
-      .from("profiles")
-      .update({ onboarded: true })
-      .eq("id", userId);
-
+    await completeOnboardingAction(goalName, category);
     router.push("/dashboard");
     router.refresh();
   }
@@ -120,12 +98,9 @@ export function OnboardingClient({ userId }: Props) {
                 variant="ghost"
                 onClick={async () => {
                   setLoading(true);
-                  const supabase = createClient();
-                  await supabase
-                    .from("profiles")
-                    .update({ onboarded: true })
-                    .eq("id", userId);
+                  await completeOnboardingAction();
                   router.push("/dashboard");
+                  router.refresh();
                 }}
               >
                 Hoppa över

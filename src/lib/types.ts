@@ -1,6 +1,7 @@
-export type Profile = {
+export type User = {
   id: string;
-  display_name: string | null;
+  name: string | null;
+  email: string;
   timezone: string;
   onboarded: boolean;
   created_at: string;

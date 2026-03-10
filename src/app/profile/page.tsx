@@ -1,40 +1,31 @@
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/auth";
+import { sql } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { ProfileClient } from "./profile-client";
 import { BottomNav } from "@/components/bottom-nav";
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await auth();
+  if (!session?.user?.id) redirect("/auth/login");
 
-  if (!user) redirect("/auth/login");
+  const userId = session.user.id;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  const users = await sql`SELECT * FROM users WHERE id = ${userId}`;
+  const user = users[0];
 
-  const { data: goals } = await supabase
-    .from("goals")
-    .select("id")
-    .eq("user_id", user.id);
+  const goals = await sql`SELECT id FROM goals WHERE user_id = ${userId}`;
 
-  const { data: checkins } = await supabase
-    .from("checkins")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("status", "done");
+  const checkins = await sql`
+    SELECT id FROM checkins WHERE user_id = ${userId} AND status = 'done'
+  `;
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
       <ProfileClient
-        email={user.email ?? ""}
-        profile={profile}
-        totalGoals={goals?.length ?? 0}
-        totalCheckins={checkins?.length ?? 0}
+        email={session.user.email ?? ""}
+        userName={user?.name ?? null}
+        totalGoals={goals.length}
+        totalCheckins={checkins.length}
       />
       <BottomNav />
     </div>

@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/auth";
+import { sql } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import { GoalDetailClient } from "./goal-detail-client";
 
@@ -8,28 +9,20 @@ type Props = {
 
 export default async function GoalDetailPage({ params }: Props) {
   const { id } = await params;
-  const supabase = await createClient();
+  const session = await auth();
+  if (!session?.user?.id) redirect("/auth/login");
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = session.user.id;
 
-  if (!user) redirect("/auth/login");
-
-  const { data: goal } = await supabase
-    .from("goals")
-    .select("*")
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .single();
-
+  const goals = await sql`
+    SELECT * FROM goals WHERE id = ${id} AND user_id = ${userId}
+  `;
+  const goal = goals[0];
   if (!goal) notFound();
 
-  const { data: checkins } = await supabase
-    .from("checkins")
-    .select("*")
-    .eq("goal_id", id)
-    .order("date", { ascending: false });
+  const checkins = await sql`
+    SELECT * FROM checkins WHERE goal_id = ${id} ORDER BY date DESC
+  `;
 
-  return <GoalDetailClient goal={goal} checkins={checkins ?? []} />;
+  return <GoalDetailClient goal={goal as any} checkins={checkins as any[]} />;
 }
